@@ -1,0 +1,33 @@
+import { Request, Response } from "express";
+import SalesOrderModel, { ISalesOrderDocument } from "../salesOrder/salesOrderModel";
+import OrganizationModel from "../organization/organizationModel";
+import mongoose, { isValidObjectId } from "mongoose";
+
+
+export const getSalesOrderQuotationById = async (req: Request, res: Response) => {
+  try {
+    console.count("calling me");
+    const orderId = req.params.id;
+
+    if (!isValidObjectId(orderId)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+
+    // Select specific fields and populate related fields
+    const order = await SalesOrderModel.findById(orderId)
+      .select('orderId sales_order_table orderTableSummary org_id') // Select only these fields
+      .populate({
+        path: 'org_id',
+        select: 'clarification_question_qutation condition_qutation',
+      });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json(order);
+  } catch (error) {
+    console.error("Error getting sales order by ID:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
